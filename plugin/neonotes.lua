@@ -38,3 +38,21 @@ end, {
   nargs = "?",
   desc = "Open or create today's journal entry (optional: project name)",
 })
+
+vim.api.nvim_create_user_command("Neonotes", function(opts)
+  local project_name = opts.args ~= "" and opts.args or nil
+  require("neonotes").open_vault(project_name)
+end, {
+  nargs = "?",
+  desc = "Navigate to vault or project directory (optional: project name)",
+})
+
+vim.api.nvim_create_user_command("NeonotesNew", function(opts)
+  local args = vim.split(opts.args, "%s+")
+  local note_name = args[1]
+  local project_name = args[2]
+  require("neonotes").new_note(note_name, project_name)
+end, {
+  nargs = "*",
+  desc = "Create a new note (usage: NeonotesNew [note-name] [project-name])",
+})

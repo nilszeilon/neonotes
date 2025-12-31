@@ -5,6 +5,9 @@ A Neovim plugin for Obsidian-like note-taking with wiki-style links and seamless
 ## Features
 
 - **Vault-based organization**: Set up a dedicated directory for all your notes
+- **Git-aware project detection**: Automatically organize notes by Git repository name
+- **Quick vault access**: Jump to your vault or specific project directories
+- **Smart note creation**: Create notes with automatic project organization
 - **Wiki-style links**: Use `[[note-name]]` to link between notes
 - **Directional linking**: Press `Enter` on a link to jump to that note
 - **Auto-create notes**: If a linked note doesn't exist, it's created automatically
@@ -43,6 +46,21 @@ use {
 ```
 
 ## Usage
+
+### Quick Start
+
+**Navigate to your vault:**
+```vim
+:Neonotes                    " Open vault root
+:Neonotes myproject          " Open specific project directory
+```
+
+**Create a new note:**
+```vim
+:NeonotesNew                 " Prompts for name, uses Git repo if available
+:NeonotesNew my-note         " Create in Git repo or vault root
+:NeonotesNew my-note work    " Create in ~/notes/work/my-note.md
+```
 
 ### Basic Workflow
 
@@ -97,6 +115,10 @@ The following keybindings are automatically set up for markdown files:
 - `<leader>jt`: Open or create today's journal entry
 
 ### Commands
+
+**Vault & Note Management:**
+- `:Neonotes [project]` - Navigate to vault root or project directory
+- `:NeonotesNew [note-name] [project]` - Create a new note (Git-aware or manual project)
 
 **Link Navigation:**
 - `:NeonotesFollowLink` - Follow link under cursor
