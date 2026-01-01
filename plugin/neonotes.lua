@@ -48,11 +48,18 @@ end, {
 })
 
 vim.api.nvim_create_user_command("NeonotesNew", function(opts)
-  local args = vim.split(opts.args, "%s+")
-  local note_name = args[1]
-  local project_name = args[2]
-  require("neonotes").new_note(note_name, project_name)
+  require("neonotes").new_note(opts.args ~= "" and opts.args or nil)
+end, {
+  nargs = "?",
+  desc = "Create a new note in vault root (no Git detection)",
+})
+
+vim.api.nvim_create_user_command("NeonotesProject", function(opts)
+  local args = vim.split(opts.args, "%s+", { trimempty = true })
+  local project_path = args[1]
+  local note_name = args[2]
+  require("neonotes").new_project_note(project_path, note_name)
 end, {
   nargs = "*",
-  desc = "Create a new note (usage: NeonotesNew [note-name] [project-name])",
+  desc = "Create a new note in a project path (usage: NeonotesProject <project/path> [note-name])",
 })

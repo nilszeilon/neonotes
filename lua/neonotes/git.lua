@@ -49,9 +49,9 @@ function M.get_repo_name()
   local repo_name = nil
 
   -- Handle SSH format: git@github.com:user/repo.git
-  repo_name = remote_url:match("git@[^:]+:([^/]+)/([^/%.]+)")
-  if repo_name then
-    return repo_name
+  local user, repo = remote_url:match("git@[^:]+:([^/]+)/([^/%.]+)")
+  if repo then
+    return repo
   end
 
   -- Handle HTTPS format: https://github.com/user/repo or https://github.com/user/repo.git
