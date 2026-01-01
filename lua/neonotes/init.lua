@@ -6,6 +6,9 @@ local navigation = require("neonotes.navigation")
 local links = require("neonotes.links")
 local journal = require("neonotes.journal")
 local git = require("neonotes.git")
+local images = require("neonotes.images")
+local paste = require("neonotes.paste")
+local picker = require("neonotes.picker")
 
 local M = {}
 
@@ -13,8 +16,12 @@ local M = {}
 -- @param opts table: Configuration options
 --   - vault_path: Path to the notes vault (default: ~/notes)
 --   - file_extension: Extension for note files (default: .md)
+--   - images: Image display configuration (see config.lua for options)
 function M.setup(opts)
   config.setup(opts)
+
+  -- Setup image display integration
+  images.setup()
 
   -- Set up autocommands for markdown files
   local group = vim.api.nvim_create_augroup("Neonotes", { clear = true })
@@ -65,6 +72,36 @@ function M.setup(opts)
         desc = "Today's journal entry",
         silent = true,
       })
+
+      -- Image paste keybinding (Cmd+V in insert mode, or leader+p in normal mode)
+      local paste_config = config.get_paste_config()
+      if paste_config.enabled then
+        vim.keymap.set("n", "<leader>p", function()
+          paste.paste_image()
+        end, {
+          buffer = true,
+          desc = "Paste image from clipboard",
+          silent = true,
+        })
+
+        -- Also support Cmd+Shift+V for pasting images
+        vim.keymap.set({ "n", "i" }, "<D-S-v>", function()
+          paste.paste_image()
+        end, {
+          buffer = true,
+          desc = "Paste image from clipboard",
+          silent = true,
+        })
+
+        -- Image picker keybinding
+        vim.keymap.set("n", "<leader>i", function()
+          picker.pick_image()
+        end, {
+          buffer = true,
+          desc = "Insert image from assets folder",
+          silent = true,
+        })
+      end
     end,
   })
 end
@@ -260,5 +297,10 @@ M.is_on_link = links.is_on_link
 M.journal_next = journal.next_entry
 M.journal_previous = journal.previous_entry
 M.journal_today = journal.today
+M.images_enabled = images.is_enabled
+M.clear_images = images.clear_images
+M.refresh_images = images.refresh_images
+M.paste_image = paste.paste_image
+M.pick_image = picker.pick_image
 
 return M

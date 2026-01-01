@@ -63,3 +63,27 @@ end, {
   nargs = "*",
   desc = "Create a new note in a project path (usage: NeonotesProject <project/path> [note-name])",
 })
+
+vim.api.nvim_create_user_command("NeonotesClearImages", function()
+  require("neonotes").clear_images()
+end, {
+  desc = "Clear all images in current buffer",
+})
+
+vim.api.nvim_create_user_command("NeonotesRefreshImages", function()
+  require("neonotes").refresh_images()
+end, {
+  desc = "Refresh/re-render images in current buffer",
+})
+
+vim.api.nvim_create_user_command("NeonotesPasteImage", function()
+  require("neonotes").paste_image()
+end, {
+  desc = "Paste image from clipboard and save to assets folder",
+})
+
+vim.api.nvim_create_user_command("NeonotesInsertImage", function()
+  require("neonotes").pick_image()
+end, {
+  desc = "Insert image from assets folder with preview",
+})
