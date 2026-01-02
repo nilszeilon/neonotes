@@ -170,6 +170,11 @@ function M.today(project_name)
 	vim.cmd("edit " .. vim.fn.fnameescape(filepath))
 
 	if not file_exists then
+		-- Add date header to new journal entries
+		local day_name = os.date("%A")
+		local header = "# " .. date .. " " .. day_name
+		vim.api.nvim_buf_set_lines(0, 0, 0, false, { header, "" })
+
 		local project_info = project_name or git.get_project_name() or "default"
 		vim.notify("Created journal entry: " .. date .. " (" .. project_info .. ")", vim.log.levels.INFO)
 	end
