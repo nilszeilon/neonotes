@@ -130,31 +130,51 @@ local function trim(str)
 	return str:match("^%s*(.-)%s*$")
 end
 
--- Determine the project directory for journal entries
--- @param project_name string|nil: Optional project name override
--- @return string: Path to the project journal directory
-local function get_project_journal_dir(project_name)
-	local vault_path = config.get_vault_path()
+-- Get the journal directory (always vault_path/journal/)
+-- @return string: Path to the journal directory
+local function get_journal_dir()
+	return config.get_vault_path() .. "/journal"
+end
 
-	-- If project name is explicitly provided, use it
-	if project_name and project_name ~= "" then
-		return vault_path .. "/" .. trim(project_name)
+-- Find the line number of a project header (## project-name) in the current buffer
+-- @param project_name string: The project name to search for
+-- @return number|nil: 1-indexed line number of the header, or nil if not found
+local function find_project_header(project_name)
+	local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+	local header = "## " .. project_name
+	for i, line in ipairs(lines) do
+		if line == header then
+			return i
+		end
 	end
+	return nil
+end
 
-	-- Try to get Git repo name
-	local repo_name = git.get_project_name()
-	if repo_name then
-		return vault_path .. "/" .. repo_name
+-- Insert a project header at the end of the buffer and position cursor below it
+-- @param project_name string: The project name to insert
+-- @return number: 1-indexed line number of the line below the inserted header
+local function insert_project_header(project_name)
+	local line_count = vim.api.nvim_buf_line_count(0)
+	local last_line = vim.api.nvim_buf_get_lines(0, line_count - 1, line_count, false)[1]
+
+	-- Ensure blank line before the new header (unless buffer is empty or last line is already blank)
+	local lines_to_insert = {}
+	if last_line ~= "" then
+		table.insert(lines_to_insert, "")
 	end
+	table.insert(lines_to_insert, "## " .. project_name)
+	table.insert(lines_to_insert, "")
 
-	-- Fall back to vault root
-	return vault_path
+	vim.api.nvim_buf_set_lines(0, line_count, line_count, false, lines_to_insert)
+
+	-- Return the line after the header
+	return line_count + #lines_to_insert
 end
 
 -- Create or open today's journal entry
--- @param project_name string|nil: Optional project name (defaults to Git repo name or vault root)
+-- @param project_name string|nil: Optional project name (defaults to Git repo name)
 function M.today(project_name)
-	local journal_dir = get_project_journal_dir(project_name)
+	local journal_dir = get_journal_dir()
 	local date = os.date("%Y-%m-%d")
 	local extension = config.get_file_extension()
 	local filename = date .. extension
@@ -174,9 +194,23 @@ function M.today(project_name)
 		local day_name = os.date("%A")
 		local header = "# " .. date .. " " .. day_name
 		vim.api.nvim_buf_set_lines(0, 0, 0, false, { header, "" })
+	end
 
-		local project_info = project_name or git.get_project_name() or "default"
-		vim.notify("Created journal entry: " .. date .. " (" .. project_info .. ")", vim.log.levels.INFO)
+	-- Resolve project name: explicit arg > git repo > nil
+	local project = project_name and project_name ~= "" and trim(project_name) or git.get_project_name()
+
+	if project then
+		local header_line = find_project_header(project)
+		if header_line then
+			-- Move cursor to the line below the existing project header
+			vim.api.nvim_win_set_cursor(0, { header_line + 1, 0 })
+			vim.notify("Journal: " .. project, vim.log.levels.INFO)
+		else
+			-- Insert project header and position cursor below it
+			local cursor_line = insert_project_header(project)
+			vim.api.nvim_win_set_cursor(0, { cursor_line, 0 })
+			vim.notify("Journal: + " .. project, vim.log.levels.INFO)
+		end
 	end
 end
 

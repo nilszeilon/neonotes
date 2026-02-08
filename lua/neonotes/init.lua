@@ -3,7 +3,6 @@
 
 local config = require("neonotes.config")
 local navigation = require("neonotes.navigation")
-local links = require("neonotes.links")
 local journal = require("neonotes.journal")
 local git = require("neonotes.git")
 local images = require("neonotes.images")
@@ -11,6 +10,9 @@ local paste = require("neonotes.paste")
 local picker = require("neonotes.picker")
 
 local M = {}
+
+-- Saved cwd to restore when leaving the vault
+local saved_cwd = nil
 
 -- Setup the plugin with user configuration
 -- @param opts table: Configuration options
@@ -25,6 +27,26 @@ function M.setup(opts)
 
   -- Set up autocommands for markdown files
   local group = vim.api.nvim_create_augroup("Neonotes", { clear = true })
+
+  -- Auto cd to vault when entering vault files, restore when leaving
+  vim.api.nvim_create_autocmd("BufEnter", {
+    group = group,
+    callback = function()
+      local vault_path = config.get_vault_path()
+      local current_file = vim.fn.expand("%:p")
+      local in_vault = current_file:match("^" .. vim.pesc(vault_path))
+
+      if in_vault then
+        if not saved_cwd then
+          saved_cwd = vim.fn.getcwd()
+        end
+        vim.cmd("cd " .. vim.fn.fnameescape(vault_path))
+      elseif saved_cwd then
+        vim.cmd("cd " .. vim.fn.fnameescape(saved_cwd))
+        saved_cwd = nil
+      end
+    end,
+  })
 
   vim.api.nvim_create_autocmd("FileType", {
     group = group,
@@ -292,12 +314,9 @@ end
 -- Public API exports
 M.follow_link = navigation.follow_link
 M.go_back = navigation.go_back
-M.get_link_under_cursor = links.get_link_under_cursor
-M.is_on_link = links.is_on_link
 M.journal_next = journal.next_entry
 M.journal_previous = journal.previous_entry
 M.journal_today = journal.today
-M.images_enabled = images.is_enabled
 M.clear_images = images.clear_images
 M.refresh_images = images.refresh_images
 M.paste_image = paste.paste_image

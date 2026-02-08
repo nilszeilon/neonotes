@@ -29,7 +29,7 @@ function M.setup()
   end
 
   -- Setup image.nvim with neonotes-specific configuration
-  image.setup({
+  local ok, err = pcall(image.setup, {
     backend = "kitty",
     integrations = {
       markdown = {
@@ -39,7 +39,6 @@ function M.setup()
         only_render_image_at_cursor = image_config.only_render_image_at_cursor,
         filetypes = { "markdown", "vimwiki" },
         resolve_image_path = function(document_path, image_path, fallback)
-          -- Use fallback which handles relative paths correctly
           return fallback(document_path, image_path)
         end,
       },
@@ -55,6 +54,11 @@ function M.setup()
     hijack_file_patterns = { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp" },
   })
 
+  if not ok then
+    vim.notify("neonotes: image.nvim setup failed (" .. tostring(err) .. "). Images disabled.", vim.log.levels.WARN)
+    return false
+  end
+
   M.enabled = true
   return true
 end
@@ -62,14 +66,6 @@ end
 -- Check if images are enabled
 function M.is_enabled()
   return M.enabled and has_image
-end
-
--- Get image.nvim instance (for advanced usage)
-function M.get_image_api()
-  if not M.is_enabled() then
-    return nil
-  end
-  return image
 end
 
 -- Clear all images in current buffer

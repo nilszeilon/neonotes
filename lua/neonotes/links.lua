@@ -27,25 +27,4 @@ function M.get_link_under_cursor()
   return nil
 end
 
--- Check if the current cursor position is on a link
--- @return boolean: true if on a link, false otherwise
-function M.is_on_link()
-  return M.get_link_under_cursor() ~= nil
-end
-
--- Get all links in the current buffer
--- @return table: Array of link texts found in the buffer
-function M.get_all_links_in_buffer()
-  local links = {}
-  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-
-  for _, line in ipairs(lines) do
-    for link_text in line:gmatch(LINK_PATTERN) do
-      table.insert(links, link_text)
-    end
-  end
-
-  return links
-end
-
 return M
