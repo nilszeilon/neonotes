@@ -47,6 +47,12 @@ end, {
   desc = "Navigate to vault or project directory (optional: project name)",
 })
 
+vim.api.nvim_create_user_command("NeonotesClose", function()
+  require("neonotes").close_vault()
+end, {
+  desc = "Leave vault mode and restore previous working directory",
+})
+
 vim.api.nvim_create_user_command("NeonotesNew", function(opts)
   require("neonotes").new_note(opts.args ~= "" and opts.args or nil)
 end, {

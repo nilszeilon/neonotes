@@ -13,6 +13,7 @@ local M = {}
 
 -- Saved cwd to restore when leaving the vault
 local saved_cwd = nil
+local in_vault_mode = false
 
 -- Setup the plugin with user configuration
 -- @param opts table: Configuration options
@@ -28,22 +29,17 @@ function M.setup(opts)
   -- Set up autocommands for markdown files
   local group = vim.api.nvim_create_augroup("Neonotes", { clear = true })
 
-  -- Auto cd to vault when entering vault files, restore when leaving
-  vim.api.nvim_create_autocmd("BufEnter", {
+  -- Enforce vault cwd while in vault mode (prevents other plugins from changing it)
+  vim.api.nvim_create_autocmd({ "BufEnter", "DirChanged" }, {
     group = group,
-    callback = function()
+    callback = function(ev)
+      if not in_vault_mode then
+        return
+      end
       local vault_path = config.get_vault_path()
-      local current_file = vim.fn.expand("%:p")
-      local in_vault = current_file:match("^" .. vim.pesc(vault_path))
-
-      if in_vault then
-        if not saved_cwd then
-          saved_cwd = vim.fn.getcwd()
-        end
+      local cwd = vim.fn.getcwd()
+      if cwd ~= vault_path then
         vim.cmd("cd " .. vim.fn.fnameescape(vault_path))
-      elseif saved_cwd then
-        vim.cmd("cd " .. vim.fn.fnameescape(saved_cwd))
-        saved_cwd = nil
       end
     end,
   })
@@ -145,8 +141,36 @@ function M.open_vault(project_name)
     end
   end
 
-  -- Open the directory in netrw or file explorer
-  vim.cmd("edit " .. vim.fn.fnameescape(target_path))
+  -- Save cwd and enter vault mode before opening
+  if not saved_cwd then
+    saved_cwd = vim.fn.getcwd()
+  end
+  in_vault_mode = true
+  vim.cmd("cd " .. vim.fn.fnameescape(vault_path))
+
+  -- Open index file in the target path
+  local extension = config.get_file_extension()
+  local index_file = target_path .. "/index" .. extension
+  if vim.fn.filereadable(index_file) == 0 then
+    local f = io.open(index_file, "w")
+    if f then
+      f:write("# Notes\n")
+      f:close()
+      vim.notify("Created index file", vim.log.levels.INFO)
+    else
+      vim.notify("Failed to create index file", vim.log.levels.ERROR)
+    end
+  end
+  vim.cmd("edit " .. vim.fn.fnameescape(index_file))
+end
+
+-- Leave vault mode and restore the previous working directory
+function M.close_vault()
+  if saved_cwd then
+    vim.cmd("cd " .. vim.fn.fnameescape(saved_cwd))
+    saved_cwd = nil
+  end
+  in_vault_mode = false
 end
 
 -- Create a new note in vault root (no Git detection)
