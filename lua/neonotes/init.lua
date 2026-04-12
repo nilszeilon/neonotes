@@ -56,6 +56,15 @@ function M.setup(opts)
         silent = true,
       })
 
+      -- Visual <CR>: wrap selection in a wiki link and open the new note
+      vim.keymap.set("x", "<CR>", function()
+        navigation.link_from_selection()
+      end, {
+        buffer = true,
+        desc = "Create link from selection",
+        silent = true,
+      })
+
       -- Optional: Set up keybinding to go back (Backspace)
       vim.keymap.set("n", "<BS>", function()
         navigation.go_back()
@@ -197,6 +206,7 @@ end
 
 -- Public API exports
 M.follow_link = navigation.follow_link
+M.link_from_selection = navigation.link_from_selection
 M.go_back = navigation.go_back
 M.journal_next = journal.next_entry
 M.journal_previous = journal.previous_entry

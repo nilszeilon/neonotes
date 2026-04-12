@@ -54,6 +54,8 @@ Create a note anywhere in your vault. Link to other notes with `[[wiki-links]]`.
 Press **Enter** on a link to follow it (creates the file if it doesn't exist).
 Press **Backspace** to go back.
 
+Tags work the same way: write `#idea` or `#project/status` and press **Enter** on the tag to jump to its note under `vault/tags/` (created on first use). Nested tags like `#foo/bar` become `tags/foo/bar.md`.
+
 ```
 ~/notes/
 ├── journal/
@@ -110,7 +112,8 @@ Set automatically for markdown files:
 
 | Key | Action |
 |---|---|
-| `<CR>` | Follow `[[link]]` under cursor |
+| `<CR>` (normal) | Follow `[[link]]` under cursor |
+| `<CR>` (visual) | Wrap selection in `[[link]]` and open the new note |
 | `<BS>` | Go back |
 | `<leader>jt` | Today's journal |
 | `<leader>jn` | Next journal entry |
