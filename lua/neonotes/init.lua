@@ -7,6 +7,7 @@ local journal = require("neonotes.journal")
 local images = require("neonotes.images")
 local paste = require("neonotes.paste")
 local picker = require("neonotes.picker")
+local highlights = require("neonotes.highlights")
 
 local M = {}
 
@@ -24,6 +25,9 @@ function M.setup(opts)
 
   -- Setup image display integration
   images.setup()
+
+  -- Setup wiki-link and tag highlighting
+  highlights.setup()
 
   -- Set up autocommands for markdown files
   local group = vim.api.nvim_create_augroup("Neonotes", { clear = true })
