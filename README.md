@@ -123,9 +123,8 @@ Set automatically for markdown files:
 
 | Command | Description |
 |---|---|
-| `:Neonotes [project]` | Open vault root or a project directory |
+| `:Neonotes` | Open vault root |
 | `:NeonotesNew [name]` | Create a note in vault root |
-| `:NeonotesProject [path] [name]` | Create a note inside a project path |
 | `:NeonotesJournalToday [project]` | Open today's journal (auto-detects git repo) |
 | `:NeonotesJournalNext` | Next journal entry |
 | `:NeonotesJournalPrevious` | Previous journal entry |
