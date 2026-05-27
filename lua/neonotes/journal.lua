@@ -180,6 +180,11 @@ function M.today(project_name)
 	local filename = date .. extension
 	local filepath = journal_dir .. "/" .. filename
 
+	-- Capture the buffer's directory BEFORE switching to the journal file,
+	-- so git detection uses the repo the user is actually working in
+	local source_dir = vim.fn.expand("%:p:h")
+	local project = project_name and project_name ~= "" and trim(project_name) or git.get_project_name(source_dir)
+
 	-- Create directory if it doesn't exist
 	if vim.fn.isdirectory(journal_dir) == 0 then
 		vim.fn.mkdir(journal_dir, "p")
@@ -195,9 +200,6 @@ function M.today(project_name)
 		local header = "# " .. date .. " " .. day_name
 		vim.api.nvim_buf_set_lines(0, 0, 0, false, { header, "" })
 	end
-
-	-- Resolve project name: explicit arg > git repo > nil
-	local project = project_name and project_name ~= "" and trim(project_name) or git.get_project_name()
 
 	if project then
 		local header_line = find_project_header(project)
