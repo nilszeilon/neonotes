@@ -7,22 +7,10 @@ local M = {}
 M.defaults = {
 	vault_path = vim.fn.expand("~/notes"),
 	file_extension = ".md",
-	images = {
-		enabled = true,
-		clear_in_insert_mode = true, -- Clear images in insert mode to reduce flicker
-		download_remote_images = true,
-		only_render_image_at_cursor = false,
-		max_width = nil,
-		max_height = nil,
-		max_width_window_percentage = 30, -- Smaller images reduce rendering time
-		max_height_window_percentage = 30,
-		window_overlap_clear_enabled = false, -- Disable to reduce re-renders
-		editor_only_render_when_focused = true,
-		tmux_show_only_in_active_window = true,
-	},
 	paste = {
 		enabled = true,
-		images_dir = "assets",
+		images_dir = "assets", -- where pasted images go, outside the blog folder
+		blog_dir = "blog", -- vault subfolder synced to the blog; pastes go next to the note here
 	},
 }
 
@@ -54,12 +42,6 @@ end
 -- @return string: File extension (e.g., ".md")
 function M.get_file_extension()
 	return M.options.file_extension
-end
-
--- Get the image configuration
--- @return table: Image configuration options
-function M.get_image_config()
-	return M.options.images or M.defaults.images
 end
 
 -- Get the paste configuration

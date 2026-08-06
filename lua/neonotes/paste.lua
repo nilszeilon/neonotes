@@ -2,6 +2,7 @@
 -- Handles clipboard image detection, saving, and markdown insertion
 
 local config = require("neonotes.config")
+local assets = require("neonotes.assets")
 
 local M = {}
 
@@ -51,17 +52,6 @@ local function has_clipboard_image()
     or result:match("JPEGf") ~= nil
 end
 
--- Get the assets directory (always at vault root)
--- @return string: Path to assets directory
-local function get_assets_dir()
-  local vault_path = config.get_vault_path()
-  local paste_config = config.get_paste_config()
-  local dir_name = paste_config.images_dir
-
-  -- Always use vault root assets folder
-  return vault_path .. "/" .. dir_name
-end
-
 -- Save clipboard image to file
 -- @param filepath string: Destination filepath
 -- @return boolean: true if successful
@@ -97,18 +87,25 @@ local function save_clipboard_image(filepath)
   return true
 end
 
--- Get relative path from current file to image file
--- @param current_file string: Path to current markdown file
--- @param image_file string: Path to image file
--- @return string: Relative path for markdown
-local function get_relative_path(current_file, image_file)
-  local current_dir = vim.fn.fnamemodify(current_file, ":h")
-  local relative = vim.fn.fnamemodify(image_file, ":.")
+-- Save the image and insert its markdown reference at the cursor
+-- @param image_path string: Full path the image was saved to
+-- @param name string: Display name to use in the markdown
+-- @return boolean: true if the image was saved and inserted
+local function save_and_insert(image_path, name)
+  if not save_clipboard_image(image_path) then
+    return false
+  end
 
-  -- Get relative path from current file to image
-  local path = vim.fn.fnamemodify(image_file, ":s?" .. vim.pesc(current_dir) .. "/??")
+  local current_file = vim.fn.expand("%:p")
+  local relative_path = assets.get_relative_path(current_file, image_path)
+  local markdown = string.format("![%s](%s)", name, relative_path)
 
-  return path
+  -- Insert at cursor
+  local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+  vim.api.nvim_buf_set_text(0, row - 1, col, row - 1, col, { markdown })
+
+  vim.notify("Image saved: " .. vim.fn.fnamemodify(image_path, ":t"), vim.log.levels.INFO)
+  return true
 end
 
 -- Main paste image function
@@ -155,16 +152,17 @@ function M.paste_image()
       filename = filename .. ".png"
     end
 
-    -- Get assets directory
-    local assets_dir = get_assets_dir()
+    -- Inside the blog folder images are saved next to the note so Syncthing
+    -- syncs them to the blog; everywhere else they go to the vault assets dir.
+    local images_dir = assets.get_images_dir(current_file)
 
-    -- Create assets directory if it doesn't exist
-    if vim.fn.isdirectory(assets_dir) == 0 then
-      vim.fn.mkdir(assets_dir, "p")
+    -- Create the images directory if it doesn't exist
+    if vim.fn.isdirectory(images_dir) == 0 then
+      vim.fn.mkdir(images_dir, "p")
     end
 
     -- Full path to save the image
-    local image_path = assets_dir .. "/" .. filename
+    local image_path = images_dir .. "/" .. filename
 
     -- Check if file already exists
     if vim.fn.filereadable(image_path) == 1 then
@@ -176,32 +174,12 @@ function M.paste_image()
           return
         end
 
-        -- Save and insert
-        if save_clipboard_image(image_path) then
-          local relative_path = get_relative_path(current_file, image_path)
-          local markdown = string.format("![%s](%s)", input, relative_path)
-
-          -- Insert at cursor
-          local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-          vim.api.nvim_buf_set_text(0, row - 1, col, row - 1, col, { markdown })
-
-          vim.notify("Image saved: " .. filename, vim.log.levels.INFO)
-        end
+        save_and_insert(image_path, input)
       end)
       return
     end
 
-    -- Save the clipboard image
-    if save_clipboard_image(image_path) then
-      local relative_path = get_relative_path(current_file, image_path)
-      local markdown = string.format("![%s](%s)", input, relative_path)
-
-      -- Insert at cursor
-      local row, col = unpack(vim.api.nvim_win_get_cursor(0))
-      vim.api.nvim_buf_set_text(0, row - 1, col, row - 1, col, { markdown })
-
-      vim.notify("Image saved: " .. filename, vim.log.levels.INFO)
-    end
+    save_and_insert(image_path, input)
   end)
 end
 

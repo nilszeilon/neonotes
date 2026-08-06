@@ -58,18 +58,6 @@ end, {
   desc = "Create a new note in vault root",
 })
 
-vim.api.nvim_create_user_command("NeonotesClearImages", function()
-  require("neonotes").clear_images()
-end, {
-  desc = "Clear all images in current buffer",
-})
-
-vim.api.nvim_create_user_command("NeonotesRefreshImages", function()
-  require("neonotes").refresh_images()
-end, {
-  desc = "Refresh/re-render images in current buffer",
-})
-
 vim.api.nvim_create_user_command("NeonotesPasteImage", function()
   require("neonotes").paste_image()
 end, {

@@ -4,7 +4,6 @@
 local config = require("neonotes.config")
 local navigation = require("neonotes.navigation")
 local journal = require("neonotes.journal")
-local images = require("neonotes.images")
 local paste = require("neonotes.paste")
 local picker = require("neonotes.picker")
 local highlights = require("neonotes.highlights")
@@ -19,12 +18,8 @@ local in_vault_mode = false
 -- @param opts table: Configuration options
 --   - vault_path: Path to the notes vault (default: ~/notes)
 --   - file_extension: Extension for note files (default: .md)
---   - images: Image display configuration (see config.lua for options)
 function M.setup(opts)
   config.setup(opts)
-
-  -- Setup image display integration
-  images.setup()
 
   -- Setup wiki-link and tag highlighting
   highlights.setup()
@@ -135,8 +130,6 @@ M.go_back = navigation.go_back
 M.journal_next = journal.next_entry
 M.journal_previous = journal.previous_entry
 M.journal_today = journal.today
-M.clear_images = images.clear_images
-M.refresh_images = images.refresh_images
 M.paste_image = paste.paste_image
 M.pick_image = picker.pick_image
 

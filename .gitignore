@@ -1,0 +1,6 @@
+# Neovim runtime log (created in cwd when running nvim)
+.nvimlog
+
+# Misc
+*.swp
+.DS_Store

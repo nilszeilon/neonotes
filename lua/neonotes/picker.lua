@@ -2,45 +2,30 @@
 -- Allows selecting images from the assets folder with preview
 
 local config = require("neonotes.config")
+local assets = require("neonotes.assets")
 
 local M = {}
 
--- Get all image files from the assets directory
+-- Get all image files under the given directory
+-- @param search_dir string: Directory to search (assets dir or the blog folder)
 -- @return table: List of image file paths
-local function get_image_files()
-  local vault_path = config.get_vault_path()
-  local paste_config = config.get_paste_config()
-  local assets_dir = vault_path .. "/" .. paste_config.images_dir
-
-  -- Check if assets directory exists
-  if vim.fn.isdirectory(assets_dir) == 0 then
+local function get_image_files(search_dir)
+  -- Check if the directory exists
+  if vim.fn.isdirectory(search_dir) == 0 then
     return {}
   end
 
   local images = {}
   local extensions = { "png", "jpg", "jpeg", "gif", "webp" }
 
-  -- Recursively find all images in assets directory
+  -- Recursively find all images in the directory
   for _, ext in ipairs(extensions) do
-    local pattern = assets_dir .. "/**/*." .. ext
+    local pattern = search_dir .. "/**/*." .. ext
     local files = vim.fn.glob(pattern, false, true)
     vim.list_extend(images, files)
   end
 
   return images
-end
-
--- Get relative path from current file to image file
--- @param current_file string: Path to current markdown file
--- @param image_file string: Path to image file
--- @return string: Relative path for markdown
-local function get_relative_path(current_file, image_file)
-  local vault_path = config.get_vault_path()
-
-  -- Get path relative to vault
-  local vault_relative = image_file:gsub("^" .. vim.pesc(vault_path) .. "/", "")
-
-  return vault_relative
 end
 
 -- Pick an image using Telescope (if available)
@@ -61,13 +46,13 @@ local function pick_with_telescope()
     return false
   end
 
-  local images = get_image_files()
+  local current_file = vim.fn.expand("%:p")
+  local images = get_image_files(assets.get_images_dir(current_file))
   if #images == 0 then
-    vim.notify("No images found in assets folder", vim.log.levels.WARN)
+    vim.notify("No images found", vim.log.levels.WARN)
     return true
   end
 
-  local current_file = vim.fn.expand("%:p")
   local vault_path = config.get_vault_path()
 
   -- Create display entries with just the filename
@@ -113,20 +98,28 @@ local function pick_with_telescope()
             end
             preview_images = {}
 
-            -- Create a temporary buffer with markdown to trigger image rendering
             local bufnr = self.state.bufnr
-            vim.api.nvim_buf_set_option(bufnr, "filetype", "markdown")
-
-            -- Get image info
             local img_path = entry.value.path
             local filename = vim.fn.fnamemodify(img_path, ":t")
-
-            -- Set buffer content with markdown image syntax
             vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {
               "# " .. filename,
               "",
-              "![](" .. img_path .. ")",
+              "",
             })
+            local ok, preview = pcall(image.from_file, img_path, {
+              window = self.state.winid,
+              buffer = bufnr,
+              x = 0,
+              y = 2,
+              inline = true,
+              with_virtual_padding = true,
+              max_width_window_percentage = 90,
+              max_height_window_percentage = 80,
+            })
+            if ok and preview then
+              preview:render()
+              table.insert(preview_images, preview)
+            end
           else
             -- Fallback: show file info
             local img_path = entry.value.path
@@ -155,7 +148,7 @@ local function pick_with_telescope()
           actions.close(prompt_bufnr)
           local selection = action_state.get_selected_entry()
           if selection then
-            local relative_path = get_relative_path(current_file, selection.value.path)
+            local relative_path = assets.get_relative_path(current_file, selection.value.path)
             local filename = vim.fn.fnamemodify(selection.value.path, ":t:r")
             local markdown = string.format("![%s](%s)", filename, relative_path)
 
@@ -176,14 +169,12 @@ end
 
 -- Pick an image using vim.ui.select (fallback)
 local function pick_with_select()
-  local images = get_image_files()
+  local current_file = vim.fn.expand("%:p")
+  local images = get_image_files(assets.get_images_dir(current_file))
   if #images == 0 then
-    vim.notify("No images found in assets folder", vim.log.levels.WARN)
+    vim.notify("No images found", vim.log.levels.WARN)
     return
   end
-
-  local current_file = vim.fn.expand("%:p")
-  local vault_path = config.get_vault_path()
 
   -- Create display names (just filenames)
   local display_items = {}
@@ -203,7 +194,7 @@ local function pick_with_select()
     end
 
     local image_path = images[idx]
-    local relative_path = get_relative_path(current_file, image_path)
+    local relative_path = assets.get_relative_path(current_file, image_path)
     local filename = vim.fn.fnamemodify(image_path, ":t:r")
     local markdown = string.format("![%s](%s)", filename, relative_path)
 
